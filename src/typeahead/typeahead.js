@@ -30,7 +30,7 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
     function(originalScope, element, attrs, $compile, $parse, $q, $timeout, $document, $window, $rootScope, $$debounce, $position, typeaheadParser) {
     var HOT_KEYS = [9, 13, 27, 38, 40];
     var eventDebounceTime = 200;
-    var modelCtrl, ngModelOptions;
+    var modelCtrl;
     //SUPPORTED ATTRIBUTES (OPTIONS)
 
     //minimal no of characters that needs to be entered before typeahead kicks-in
@@ -94,7 +94,7 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
     var invokeModelSetter = $parse(attrs.ngModel + '($$$p)');
     var $setModelValue = function(scope, newValue) {
       if (angular.isFunction(parsedModel(originalScope)) &&
-        ngModelOptions && ngModelOptions.$options && ngModelOptions.$options.getterSetter) {
+        modelCtrl.$options.getOption('getterSetter')) {
         return invokeModelSetter(scope, {$$$p: newValue});
       }
 
@@ -507,11 +507,10 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
       element.after($popup);
     }
 
-    this.init = function(_modelCtrl, _ngModelOptions) {
+    this.init = function(_modelCtrl) {
       modelCtrl = _modelCtrl;
-      ngModelOptions = _ngModelOptions;
 
-      scope.debounceUpdate = modelCtrl.$options && $parse(modelCtrl.$options.debounce)(originalScope);
+      scope.debounceUpdate = $parse(modelCtrl.$options.getOption('debounce'))(originalScope);
 
       //plug into $parsers pipeline to open a typeahead on view changes initiated from DOM
       //$parsers kick-in on all the changes coming from the view as well as manually triggered by $setViewValue
@@ -576,9 +575,9 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.debounce', 'ui.bootstrap
   .directive('uibTypeahead', function() {
     return {
       controller: 'UibTypeaheadController',
-      require: ['ngModel', '^?ngModelOptions', 'uibTypeahead'],
+      require: ['ngModel', 'uibTypeahead'],
       link: function(originalScope, element, attrs, ctrls) {
-        ctrls[2].init(ctrls[0], ctrls[1]);
+        ctrls[1].init(ctrls[0]);
       }
     };
   })
