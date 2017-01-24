@@ -1612,7 +1612,7 @@ describe('$uibModal', function() {
       var windowEl = $compile('<div uib-modal-window template-url="window.html">content</div>')($rootScope);
       $rootScope.$digest();
 
-      expect(windowEl.html()).toBe('<div ng-transclude=""><span class="ng-scope">content</span></div>');
+      expect(windowEl.html()).toBe('<div ng-transclude="">content</div>');
     }));
   });
 
