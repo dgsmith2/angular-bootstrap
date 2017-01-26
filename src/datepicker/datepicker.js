@@ -161,18 +161,7 @@ angular.module('ui.bootstrap.datepicker', ['ui.bootstrap.dateparser', 'ui.bootst
 
   this.init = function(ngModelCtrl_) {
     ngModelCtrl = ngModelCtrl_;
-
-    // grab any timezone value based on precedence
-    var timezone = ngModelCtrl_.$options.getOption('timezone') ||
-      ($scope.datepickerOptions.ngModelOptions ? $scope.datepickerOptions.ngModelOptions.timezone : null) ||
-      (datepickerConfig.ngModelOptions ? datepickerConfig.ngModelOptions.timezone : null);
-
-    // need to start with existing ModelOptions but also give it greatest precedence minus its default of null timezone
-    ngModelOptions = ngModelCtrl_.$options
-      .createChild(datepickerConfig.ngModelOptions)
-      .createChild($scope.datepickerOptions.ngModelOptions)
-      .createChild(ngModelCtrl_.$options)
-      .createChild({timezone: timezone});
+    ngModelOptions = extractOptions(ngModelCtrl);
 
     if ($scope.datepickerOptions.initDate) {
       self.activeDate = dateParser.fromTimezone($scope.datepickerOptions.initDate, ngModelOptions.getOption('timezone')) || new Date();
@@ -361,6 +350,37 @@ angular.module('ui.bootstrap.datepicker', ['ui.bootstrap.dateparser', 'ui.bootst
   function setMode(mode) {
     $scope.datepickerMode = mode;
     $scope.datepickerOptions.datepickerMode = mode;
+  }
+
+  function extractOptions(ngModelCtrl) {
+    var ngModelOptions;
+
+    if (angular.version.minor < 6) { // in angular < 1.6 $options could be missing
+      // guarantee a value
+      ngModelOptions = ngModelCtrl.$options ||
+        $scope.datepickerOptions.ngModelOptions ||
+        datepickerConfig.ngModelOptions ||
+        {};
+
+      // mimic 1.6+ api
+      ngModelOptions.getOption = function (key) {
+        return ngModelOptions[key];
+      };
+    } else { // in angular >=1.6 $options is always present
+      // ng-model-options defaults timezone to null; don't let its precedence squash a non-null value
+      var timezone = ngModelCtrl.$options.getOption('timezone') ||
+        ($scope.datepickerOptions.ngModelOptions ? $scope.datepickerOptions.ngModelOptions.timezone : null) ||
+        (datepickerConfig.ngModelOptions ? datepickerConfig.ngModelOptions.timezone : null);
+
+      // values passed to createChild override existing values
+      ngModelOptions = ngModelCtrl.$options // start with a ModelOptions instance
+        .createChild(datepickerConfig.ngModelOptions) // lowest precedence
+        .createChild($scope.datepickerOptions.ngModelOptions)
+        .createChild(ngModelCtrl.$options) // highest precedence
+        .createChild({timezone: timezone}); // to keep from squashing a non-null value
+    }
+
+    return ngModelOptions;
   }
 }])
 
